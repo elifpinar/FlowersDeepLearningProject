@@ -2,11 +2,9 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import os
 
-# Veri yolu
 dataset_path = "flower_photos"
 
 print(f"Dataset Path Exists: {os.path.exists(dataset_path)}")
-
 
 import os
 import numpy as np
@@ -19,16 +17,15 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from sklearn.metrics import classification_report, confusion_matrix
 
-# Parametreler
-img_height, img_width = 150, 150  # Görüntü boyutları
+#Parametreler
+img_height, img_width = 150, 150  #Görüntü boyutları
 batch_size = 32
-num_classes = 5  # Daisy, Dandelion, Roses, Sunflowers, Tulips
+num_classes = 5  #Daisy, Dandelion, Roses, Sunflowers, Tulips
 nb_epoch = 20
 
-# Flowers Dataset yolunu belirtin (klasör yapısı: flower_photos/daisy, flower_photos/dandelion, ...)
-data_dir = "flower_photos"  # Path to your dataset
+data_dir = "flower_photos"  
 
-# Veri artırma (Data Augmentation)
+#Veri artırma (Data Augmentation)
 data_gen = ImageDataGenerator(
     rescale=1.0 / 255,  # Normalizasyon
     rotation_range=30,
@@ -40,7 +37,6 @@ data_gen = ImageDataGenerator(
     validation_split=0.2,  # Eğitim/Doğrulama veri ayrımı
 )
 
-# Eğitim ve doğrulama veri setlerini oluşturma
 train_generator = data_gen.flow_from_directory(
     data_dir,
     target_size=(img_height, img_width),
@@ -78,13 +74,10 @@ model = Sequential([
     Dense(num_classes, activation="softmax"),
 ])
 
-# Model özeti
 model.summary()
 
-# Modeli derleme
 model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
 
-# Model eğitimi
 history = model.fit(
     train_generator,
     epochs=nb_epoch,
@@ -92,7 +85,6 @@ history = model.fit(
     verbose=1,
 )
 
-# Eğitim ve doğrulama sonuçlarının görselleştirilmesi
 train_acc = history.history['accuracy']
 val_acc = history.history['val_accuracy']
 train_loss = history.history['loss']
@@ -100,7 +92,6 @@ val_loss = history.history['val_loss']
 
 plt.figure(figsize=(12, 6))
 
-# Doğruluk grafiği
 plt.subplot(1, 2, 1)
 plt.plot(train_acc, label='Eğitim Doğruluğu')
 plt.plot(val_acc, label='Doğrulama Doğruluğu')
@@ -110,7 +101,6 @@ plt.ylabel('Doğruluk')
 plt.legend()
 plt.grid()
 
-# Loss grafiği
 plt.subplot(1, 2, 2)
 plt.plot(train_loss, label='Eğitim Kaybı')
 plt.plot(val_loss, label='Doğrulama Kaybı')
@@ -123,13 +113,11 @@ plt.grid()
 plt.tight_layout()
 plt.show()
 
-# Tahmin işlemi
 val_generator.reset()
 y_pred = model.predict(val_generator)
 y_pred_classes = np.argmax(y_pred, axis=1)
 y_true = val_generator.classes
 
-# Confusion Matrix
 conf_matrix = confusion_matrix(y_true, y_pred_classes)
 plt.figure(figsize=(10, 8))
 sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues',
@@ -140,7 +128,7 @@ plt.ylabel('Gerçek Değer')
 plt.title('Confusion Matrix')
 plt.show()
 
-# Classification Report
+#Classification Report
 class_report = classification_report(
     y_true, y_pred_classes, target_names=list(val_generator.class_indices.keys())
 )

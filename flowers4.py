@@ -12,24 +12,34 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.callbacks import EarlyStopping
 from PIL import Image
 
-#Parametreler
-img_height, img_width = 150, 150  # Görüntü boyutları
+
+img_height, img_width = 150, 150  #Görüntü boyutları
 batch_size = 64
-num_classes = 5  # Daisy, Dandelion, Roses, Sunflowers, Tulips
+num_classes = 5  
 nb_epoch = 20
 
-
 data_dir = "flower_photos"  
+
 def load_balanced_data(data_dir, img_height, img_width):
     images = []
     labels = []
     class_names = sorted(os.listdir(data_dir))
-    min_samples = min([len(os.listdir(os.path.join(data_dir, cls))) for cls in class_names])
-    
+
+    class_counts = {cls: len(os.listdir(os.path.join(data_dir, cls))) for cls in class_names}
+    print("Sınıf Eleman Sayıları:")
+    for cls, count in class_counts.items():
+        print(f"{cls}: {count}")
+
+    max_samples = max(class_counts.values())  # En büyük sınıf boyutu
+
     for idx, class_name in enumerate(class_names):
         class_dir = os.path.join(data_dir, class_name)
-        class_images = glob.glob(class_dir + "/*.jpg")[:min_samples]  #Minimum örnek kadar al
-        for image_path in class_images:
+        class_images = glob.glob(class_dir + "/*.jpg")
+        
+        
+        augmented_images = np.random.choice(class_images, max_samples, replace=True)
+        
+        for image_path in augmented_images:
             img = Image.open(image_path).resize((img_width, img_height))
             img_array = np.array(img) / 255.0  #Normalizasyon
             images.append(img_array)
@@ -41,7 +51,6 @@ def load_balanced_data(data_dir, img_height, img_width):
 X, y = load_balanced_data(data_dir, img_height, img_width)
 
 X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
-
 
 model = Sequential([
     Input(shape=(img_height, img_width, 3)),
@@ -63,13 +72,10 @@ model = Sequential([
     Dense(num_classes, activation="softmax"),
 ])
 
-#Model özeti
 model.summary()
 
-#Modeli derleme
+
 model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
-
-
 
 early_stopping = EarlyStopping(
     monitor="val_loss", 
@@ -86,7 +92,7 @@ history = model.fit(
     callbacks=[early_stopping],  # Callbacks parametresine ekleme
 )
 
-#Eğitim ve doğrulama sonuçlarının görselleştirilmesi
+#Sonuçlarının görselleştirilmesi
 train_acc = history.history['accuracy']
 val_acc = history.history['val_accuracy']
 train_loss = history.history['loss']
@@ -117,7 +123,7 @@ plt.grid()
 plt.tight_layout()
 plt.show()
 
-#Tahmin 
+
 y_pred = model.predict(X_val)
 y_pred_classes = np.argmax(y_pred, axis=1)
 y_true = np.argmax(y_val, axis=1)
@@ -132,7 +138,6 @@ plt.xlabel('Tahmin Edilen')
 plt.ylabel('Gerçek Değer')
 plt.title('Confusion Matrix')
 plt.show()
-
 
 class_report = classification_report(
     y_true, y_pred_classes, target_names=sorted(os.listdir(data_dir))
